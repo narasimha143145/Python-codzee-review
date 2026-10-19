@@ -11,19 +11,27 @@ class TestAddTask(unittest.TestCase):
         self.assertTrue(add_task("Learn Python"))
         self.assertEqual(tasks, ["Learn Python"])
 
-    def test_empty_task(self):
-        self.assertFalse(add_task("   "))
-        self.assertEqual(tasks, [])
+    def test_normalizes_valid_task(self):
+        self.assertTrue(add_task("  a\u200bb "))
+        self.assertEqual(tasks, ["ab"])
 
-    def test_none_task(self):
-        self.assertFalse(add_task(None))
-        self.assertEqual(tasks, [])
+    def test_rejects_invalid_inputs(self):
+        invalid_inputs = [
+            None, 123, [], "", "   ",
+            "\u200b", "\ufeff", " \u200b \ufeff ", "\u2060"
+        ]
+        for value in invalid_inputs:
+            with self.subTest(value=repr(value)):
+                tasks.clear()
+                self.assertFalse(add_task(value))
+                self.assertEqual(tasks, [])
 
-    def test_invisible_task(self):
-        self.assertFalse(add_task("\u200b"))
-        self.assertEqual(tasks, [])
+    def test_multiple_valid_tasks(self):
+        self.assertTrue(add_task("Task one"))
+        self.assertTrue(add_task("Task two"))
+        self.assertEqual(tasks, ["Task one", "Task two"])
 
 
 if __name__ == "__main__":
     unittest.main()
-  
+    
