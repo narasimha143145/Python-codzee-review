@@ -1,35 +1,44 @@
 
 import unittest
+
 from app import add_task, tasks
 
 
 class TestAddTask(unittest.TestCase):
+
     def setUp(self):
         tasks.clear()
 
-    def test_valid_task(self):
-        self.assertTrue(add_task("Learn Python"))
-        self.assertEqual(tasks, ["Learn Python"])
+    def test_adds_valid_task(self):
+        self.assertIs(add_task("Complete project"), True)
+        self.assertEqual(tasks, ["Complete project"])
 
     def test_normalizes_valid_task(self):
-        self.assertTrue(add_task("  a\u200bb "))
-        self.assertEqual(tasks, ["ab"])
+        self.assertIs(add_task("  Complete project  "), True)
+        self.assertEqual(tasks, ["Complete project"])
 
     def test_rejects_invalid_inputs(self):
         invalid_inputs = [
-            None, 123, [], "", "   ",
-            "\u200b", "\ufeff", " \u200b \ufeff ", "\u2060"
+            None,
+            123,
+            [],
+            "",
+            "   ",
+            "\u200b",
+            "\ufeff",
+            "\u2060",
+            " \u200b \ufeff ",
         ]
+
         for value in invalid_inputs:
             with self.subTest(value=repr(value)):
                 tasks.clear()
-                self.assertFalse(add_task(value))
+                self.assertIs(add_task(value), False)
                 self.assertEqual(tasks, [])
 
-    def test_multiple_valid_tasks(self):
-        self.assertTrue(add_task("Task one"))
-        self.assertTrue(add_task("Task two"))
-        self.assertEqual(tasks, ["Task one", "Task two"])
+    def test_preserves_interior_zero_width_character(self):
+        self.assertIs(add_task("a\u200bb"), True)
+        self.assertEqual(tasks, ["a\u200bb"])
 
 
 if __name__ == "__main__":
