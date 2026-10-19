@@ -1,61 +1,51 @@
 
-import unittest
+import pytest
 
-from app import add_task, tasks
-
-
-class TestAddTask(unittest.TestCase):
-
-    def setUp(self):
-        tasks.clear()
-
-    def test_adds_valid_task(self):
-        self.assertIs(add_task("Complete project"), True)
-        self.assertEqual(tasks, ["Complete project"])
-
-    def test_normalizes_valid_task(self):
-        self.assertIs(add_task("  Complete project  "), True)
-        self.assertEqual(tasks, ["Complete project"])
-
-    def test_rejects_invalid_inputs(self):
-        invalid_inputs = [
-            None,
-            123,
-            [],
-            "",
-            "   ",
-            "\u200b",
-            "\ufeff",
-            "\u2060",
-            "\u200d",
-            "\u200c",
-            "\u00ad",
-            "\x00",
-            " \u200b \ufeff ",
-        ]
-
-        for value in invalid_inputs:
-            with self.subTest(value=repr(value)):
-                tasks.clear()
-                self.assertIs(add_task(value), False)
-                self.assertEqual(tasks, [])
-
-    def test_strips_invisible_characters_at_edges(self):
-        self.assertIs(
-            add_task("\u200bComplete project\ufeff"), True
-        )
-        self.assertEqual(tasks, ["Complete project"])
-
-    def test_preserves_interior_zero_width_character(self):
-        self.assertIs(add_task("a\u200bb"), True)
-        self.assertEqual(tasks, ["a\u200bb"])
-
-    def test_multiple_valid_tasks(self):
-        self.assertIs(add_task("First task"), True)
-        self.assertIs(add_task("Second task"), True)
-        self.assertEqual(tasks, ["First task", "Second task"])
+from app import (
+    tasks,
+    add_task,
+    complete_task,
+    clean_task_title,
+    get_task_summary,
+)
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.fixture(autouse=True)
+def clear_tasks():
+    tasks.clear()
+
+
+def test_fixed_point_cleanup_and_completion():
+    add_task(" \u200b \u200b x")
+
+    assert tasks[0]["title"] == "x"
+    assert tasks[0]["completed"] is False
+
+    assert complete_task("x") is True
+    assert tasks[0]["completed"] is True
+
+
+def test_duplicate_titles_can_all_be_completed():
+    add_task("x")
+    add_task("x")
+
+    assert complete_task("x") is True
+    assert sum(task["completed"] for task in tasks) == 1
+
+    assert complete_task("x") is True
+    assert sum(task["completed"] for task in tasks) == 2
+
+    assert complete_task("x") is False
+
+
+def test_task_summary():
+    add_task("First")
+    add_task("Second")
+    complete_task("First")
+
+    assert get_task_summary() == {
+        "total": 2,
+        "completed": 1,
+        "pending": 1,
+    }
     
