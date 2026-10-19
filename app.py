@@ -10,11 +10,22 @@ INVISIBLE_EDGE_CHARS = (
 
 
 def clean_task_title(title):
-    previous = None
-    while title != previous:
-        previous = title
-        title = title.strip().strip(INVISIBLE_EDGE_CHARS)
-    return title
+    start = 0
+    end = len(title)
+
+    while start < end and (
+        title[start].isspace()
+        or title[start] in INVISIBLE_EDGE_CHARS
+    ):
+        start += 1
+
+    while start < end and (
+        title[end - 1].isspace()
+        or title[end - 1] in INVISIBLE_EDGE_CHARS
+    ):
+        end -= 1
+
+    return title[start:end]
 
 
 def add_task(task):
@@ -53,8 +64,9 @@ def add_task(task):
 
     tasks.append({
         "title": cleaned_task,
-        "completed": False
+        "completed": False,
     })
+
     print(f"Task added: {cleaned_task}")
     return True
 
@@ -64,7 +76,10 @@ def complete_task(task_title):
         print("Error: Task title must be text.")
         return False
 
-    if any(0xD800 <= ord(char) <= 0xDFFF for char in task_title):
+    if any(
+        0xD800 <= ord(char) <= 0xDFFF
+        for char in task_title
+    ):
         print("Error: Task title contains invalid characters.")
         return False
 
@@ -94,7 +109,7 @@ def show_tasks():
 
     for index, task in enumerate(tasks, start=1):
         status = "Completed" if task["completed"] else "Pending"
-        print(f"{index}. {task['title']} - {status}")
+        print(f"{index}. {task['title']} ({status})")
 
 
 def get_task_summary():
@@ -107,7 +122,7 @@ def get_task_summary():
     return {
         "total": total,
         "completed": completed,
-        "pending": pending
+        "pending": pending,
     }
 
 
@@ -124,6 +139,7 @@ if __name__ == "__main__":
     add_task("Complete Codzee task")
 
     complete_task("Complete Codzee task")
+
     show_tasks()
     show_task_summary()
     
