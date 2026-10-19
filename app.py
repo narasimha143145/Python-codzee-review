@@ -14,19 +14,16 @@ def add_task(task):
         print("Error: Task must be text.")
         return False
 
-    # Reject lone surrogate characters before storing or printing.
     if any(0xD800 <= ord(char) <= 0xDFFF for char in task):
         print("Error: Task contains invalid characters.")
         return False
 
-    # Remove ordinary whitespace and known invisible edge characters.
     cleaned_task = task.strip().strip(INVISIBLE_EDGE_CHARS).strip()
 
     if not cleaned_task:
         print("Error: Task cannot be empty.")
         return False
 
-    # Reject control characters and line or paragraph separators.
     if any(
         unicodedata.category(char) in ("Cc", "Zl", "Zp")
         for char in cleaned_task
@@ -34,10 +31,8 @@ def add_task(task):
         print("Error: Task cannot contain control characters.")
         return False
 
-    # Reject characters that can look like an empty task.
     visible_chars = [
-        char
-        for char in cleaned_task
+        char for char in cleaned_task
         if char.isprintable()
         and not char.isspace()
         and char not in ("\u3164", "\u2800")
@@ -47,9 +42,23 @@ def add_task(task):
         print("Error: Task cannot be empty.")
         return False
 
-    tasks.append(cleaned_task)
+    tasks.append({
+        "title": cleaned_task,
+        "completed": False
+    })
     print(f"Task added: {cleaned_task}")
     return True
+
+
+def complete_task(task_title):
+    for task in tasks:
+        if task["title"].casefold() == task_title.strip().casefold():
+            task["completed"] = True
+            print(f"Task completed: {task['title']}")
+            return True
+
+    print("Error: Task not found.")
+    return False
 
 
 def show_tasks():
@@ -58,13 +67,33 @@ def show_tasks():
         return
 
     for index, task in enumerate(tasks, start=1):
-        print(f"{index}. {task}")
+        status = "Completed" if task["completed"] else "Pending"
+        print(f"{index}. {task['title']} - {status}")
+
+
+def get_task_summary():
+    total = len(tasks)
+    completed = sum(task["completed"] for task in tasks)
+    pending = total - completed
+
+    return {
+        "total": total,
+        "completed": completed,
+        "pending": pending
+    }
+
+
+def show_task_summary():
+    summary = get_task_summary()
+    print(f"Total tasks: {summary['total']}")
+    print(f"Completed tasks: {summary['completed']}")
+    print(f"Pending tasks: {summary['pending']}")
 
 
 if __name__ == "__main__":
     add_task("Complete Codzee task")
-    add_task("   ")
-    add_task(None)
-    add_task("\u200b")
+    add_task("Review pull requests")
+    complete_task("Complete Codzee task")
     show_tasks()
+    show_task_summary()
     
