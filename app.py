@@ -1,9 +1,6 @@
-
 import unicodedata
 
 tasks = []
-
-INVISIBLE_EDGE_CHARS = "\u200b\u200c\u200d\u2060\ufeff\u00ad\u200e\u200f\u202a\u202b\u202c\u202d\u202e"
 
 
 def add_task(task):
@@ -11,21 +8,31 @@ def add_task(task):
         print("Error: Task must be text.")
         return False
 
+    if any(0xD800 <= ord(c) <= 0xDFFF for c in task):
+        print("Error: Task contains invalid characters.")
+        return False
+
     cleaned_task = task.strip()
 
-    while cleaned_task and unicodedata.category(cleaned_task[0]) == "Cf":
-        cleaned_task = cleaned_task[1:]
+    start = 0
+    end = len(cleaned_task)
 
-    while cleaned_task and unicodedata.category(cleaned_task[-1]) == "Cf":
-        cleaned_task = cleaned_task[:-1]
+    while start < end and unicodedata.category(cleaned_task[start]) == "Cf":
+        start += 1
 
-    cleaned_task = cleaned_task.strip()
+    while end > start and unicodedata.category(cleaned_task[end - 1]) == "Cf":
+        end -= 1
+
+    cleaned_task = cleaned_task[start:end].strip()
 
     if not cleaned_task:
         print("Error: Task cannot be empty.")
         return False
 
-    if any(unicodedata.category(c) == "Cc" for c in cleaned_task):
+    if any(
+        unicodedata.category(c) in ("Cc", "Zl", "Zp")
+        for c in cleaned_task
+    ):
         print("Error: Task cannot contain control characters.")
         return False
 
