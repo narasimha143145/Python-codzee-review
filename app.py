@@ -9,6 +9,10 @@ INVISIBLE_EDGE_CHARS = (
 )
 
 
+def clean_task_title(title):
+    return title.strip().strip(INVISIBLE_EDGE_CHARS).strip()
+
+
 def add_task(task):
     if not isinstance(task, str):
         print("Error: Task must be text.")
@@ -18,7 +22,7 @@ def add_task(task):
         print("Error: Task contains invalid characters.")
         return False
 
-    cleaned_task = task.strip().strip(INVISIBLE_EDGE_CHARS).strip()
+    cleaned_task = clean_task_title(task)
 
     if not cleaned_task:
         print("Error: Task cannot be empty.")
@@ -56,7 +60,11 @@ def complete_task(task_title):
         print("Error: Task title must be text.")
         return False
 
-    normalized_title = task_title.strip().casefold()
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in task_title):
+        print("Error: Task title contains invalid characters.")
+        return False
+
+    normalized_title = clean_task_title(task_title).casefold()
 
     if not normalized_title:
         print("Error: Task title cannot be empty.")
@@ -112,7 +120,7 @@ if __name__ == "__main__":
     add_task("Complete Codzee task")
 
     complete_task("Complete Codzee task")
-
     show_tasks()
     show_task_summary()
+    
     
