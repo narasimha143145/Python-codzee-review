@@ -1,6 +1,12 @@
+
 import unicodedata
 
 tasks = []
+
+INVISIBLE_EDGE_CHARS = (
+    "\u200b\u200c\u200d\u2060\ufeff\u00ad"
+    "\u200e\u200f\u202a\u202b\u202c\u202d\u202e"
+)
 
 
 def add_task(task):
@@ -8,39 +14,33 @@ def add_task(task):
         print("Error: Task must be text.")
         return False
 
-    if any(0xD800 <= ord(c) <= 0xDFFF for c in task):
+    # Reject lone surrogate characters before storing or printing.
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in task):
         print("Error: Task contains invalid characters.")
         return False
 
-    cleaned_task = task.strip()
-
-    start = 0
-    end = len(cleaned_task)
-
-    while start < end and unicodedata.category(cleaned_task[start]) == "Cf":
-        start += 1
-
-    while end > start and unicodedata.category(cleaned_task[end - 1]) == "Cf":
-        end -= 1
-
-    cleaned_task = cleaned_task[start:end].strip()
+    # Remove ordinary whitespace and known invisible edge characters.
+    cleaned_task = task.strip().strip(INVISIBLE_EDGE_CHARS).strip()
 
     if not cleaned_task:
         print("Error: Task cannot be empty.")
         return False
 
+    # Reject control characters and line or paragraph separators.
     if any(
-        unicodedata.category(c) in ("Cc", "Zl", "Zp")
-        for c in cleaned_task
+        unicodedata.category(char) in ("Cc", "Zl", "Zp")
+        for char in cleaned_task
     ):
         print("Error: Task cannot contain control characters.")
         return False
 
+    # Reject characters that can look like an empty task.
     visible_chars = [
-        c for c in cleaned_task
-        if c.isprintable()
-        and not c.isspace()
-        and c not in ("\u3164", "\u2800")
+        char
+        for char in cleaned_task
+        if char.isprintable()
+        and not char.isspace()
+        and char not in ("\u3164", "\u2800")
     ]
 
     if not visible_chars:
