@@ -32,7 +32,8 @@ def add_task(task):
         return False
 
     visible_chars = [
-        char for char in cleaned_task
+        char
+        for char in cleaned_task
         if char.isprintable()
         and not char.isspace()
         and char not in ("\u3164", "\u2800")
@@ -51,13 +52,26 @@ def add_task(task):
 
 
 def complete_task(task_title):
+    if not isinstance(task_title, str):
+        print("Error: Task title must be text.")
+        return False
+
+    normalized_title = task_title.strip().casefold()
+
+    if not normalized_title:
+        print("Error: Task title cannot be empty.")
+        return False
+
     for task in tasks:
-        if task["title"].casefold() == task_title.strip().casefold():
+        if (
+            task["title"].casefold() == normalized_title
+            and not task["completed"]
+        ):
             task["completed"] = True
             print(f"Task completed: {task['title']}")
             return True
 
-    print("Error: Task not found.")
+    print("Error: No pending task found with that title.")
     return False
 
 
@@ -73,7 +87,9 @@ def show_tasks():
 
 def get_task_summary():
     total = len(tasks)
-    completed = sum(task["completed"] for task in tasks)
+    completed = sum(
+        1 for task in tasks if task["completed"]
+    )
     pending = total - completed
 
     return {
@@ -93,7 +109,10 @@ def show_task_summary():
 if __name__ == "__main__":
     add_task("Complete Codzee task")
     add_task("Review pull requests")
+    add_task("Complete Codzee task")
+
     complete_task("Complete Codzee task")
+
     show_tasks()
     show_task_summary()
     
