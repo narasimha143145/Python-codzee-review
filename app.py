@@ -10,7 +10,11 @@ INVISIBLE_EDGE_CHARS = (
 
 
 def clean_task_title(title):
-    return title.strip().strip(INVISIBLE_EDGE_CHARS).strip()
+    previous = None
+    while title != previous:
+        previous = title
+        title = title.strip().strip(INVISIBLE_EDGE_CHARS)
+    return title
 
 
 def add_task(task):
