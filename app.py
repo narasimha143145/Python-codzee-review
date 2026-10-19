@@ -224,3 +224,14 @@ if _name_ == "_main_":
     print("\nPending high-priority tasks:")
     for task in manager.list_tasks(completed=False, priority="high"):
         print(task)
+        print("\nTask summary:")
+    total = len(manager.tasks)
+    completed = sum(
+        1 for task in manager.tasks.values()
+        if task.completed
+    )
+    pending = total - completed
+
+    print(f"Total tasks: {total}")
+    print(f"Completed tasks: {completed}")
+    print(f"Pending tasks: {pending}")
