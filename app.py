@@ -51,8 +51,7 @@ def add_task(task):
         return False
 
     visible_chars = [
-        char
-        for char in cleaned_task
+        char for char in cleaned_task
         if char.isprintable()
         and not char.isspace()
         and char not in ("\u3164", "\u2800")
@@ -109,7 +108,12 @@ def show_tasks():
 
     for index, task in enumerate(tasks, start=1):
         status = "Completed" if task["completed"] else "Pending"
-        print(f"{index}. {task['title']} ({status})")
+        priority = task.get("priority", "medium").capitalize()
+
+        print(
+            f"{index}. {task['title']} "
+            f"({status}, Priority: {priority})"
+        )
 
 
 def get_task_summary():
@@ -133,14 +137,55 @@ def show_task_summary():
     print(f"Pending tasks: {summary['pending']}")
 
 
+def set_task_priority(task_title, priority):
+    """Set a task's priority to low, medium, or high."""
+    if not isinstance(task_title, str):
+        raise ValueError("Task title must be text.")
+
+    if not isinstance(priority, str):
+        raise ValueError("Priority must be low, medium, or high.")
+
+    normalized_title = clean_task_title(task_title).casefold()
+    normalized_priority = priority.strip().lower()
+
+    if not normalized_title:
+        raise ValueError("Task title cannot be empty.")
+
+    if normalized_priority not in {"low", "medium", "high"}:
+        raise ValueError("Priority must be low, medium, or high.")
+
+    for task in tasks:
+        if task["title"].casefold() == normalized_title:
+            task["priority"] = normalized_priority
+            return True
+
+    return False
+
+
+def get_tasks_by_priority(priority):
+    """Return tasks matching the requested priority."""
+    if not isinstance(priority, str):
+        raise ValueError("Priority must be low, medium, or high.")
+
+    normalized_priority = priority.strip().lower()
+
+    if normalized_priority not in {"low", "medium", "high"}:
+        raise ValueError("Priority must be low, medium, or high.")
+
+    return [
+        task for task in tasks
+        if task.get("priority", "medium") == normalized_priority
+    ]
+
+
 if __name__ == "__main__":
     add_task("Complete Codzee task")
     add_task("Review pull requests")
     add_task("Complete Codzee task")
 
     complete_task("Complete Codzee task")
+    set_task_priority("Review pull requests", "high")
 
     show_tasks()
     show_task_summary()
-    
     
