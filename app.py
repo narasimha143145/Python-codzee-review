@@ -4,8 +4,8 @@ import unicodedata
 tasks = []
 
 INVISIBLE_EDGE_CHARS = (
-    "\u200b\u200c\u200d\u2060\ufeff\u00ad"
-    "\u200e\u200f\u202a\u202b\u202c\u202d\u202e"
+    "\u200b\u200e\u200f\u2060\ufeff\u00ad"
+    "\u202a\u202b\u202c\u202d\u202e"
 )
 
 
@@ -65,6 +65,7 @@ def add_task(task):
     tasks.append({
         "title": cleaned_task,
         "completed": False,
+        "priority": "medium",
     })
 
     print(f"Task added: {cleaned_task}")
@@ -76,10 +77,7 @@ def complete_task(task_title):
         print("Error: Task title must be text.")
         return False
 
-    if any(
-        0xD800 <= ord(char) <= 0xDFFF
-        for char in task_title
-    ):
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in task_title):
         print("Error: Task title contains invalid characters.")
         return False
 
@@ -109,14 +107,17 @@ def show_tasks():
 
     for index, task in enumerate(tasks, start=1):
         status = "Completed" if task["completed"] else "Pending"
-        print(f"{index}. {task['title']} ({status})")
+        priority = task.get("priority", "medium").capitalize()
+
+        print(
+            f"{index}. {task['title']} "
+            f"({status}, Priority: {priority})"
+        )
 
 
 def get_task_summary():
     total = len(tasks)
-    completed = sum(
-        1 for task in tasks if task["completed"]
-    )
+    completed = sum(1 for task in tasks if task["completed"])
     pending = total - completed
 
     return {
@@ -133,12 +134,81 @@ def show_task_summary():
     print(f"Pending tasks: {summary['pending']}")
 
 
+def set_task_priority(task_title, priority):
+    """Set priority on the first pending match, or first match if all completed."""
+
+    if not isinstance(task_title, str):
+        print("Error: Task title must be text.")
+        return False
+
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in task_title):
+        print("Error: Task title contains invalid characters.")
+        return False
+
+    if not isinstance(priority, str):
+        print("Error: Priority must be low, medium, or high.")
+        return False
+
+    normalized_title = clean_task_title(task_title).casefold()
+    normalized_priority = priority.strip().lower()
+
+    if not normalized_title:
+        print("Error: Task title cannot be empty.")
+        return False
+
+    if normalized_priority not in ("low", "medium", "high"):
+        print("Error: Priority must be low, medium, or high.")
+        return False
+
+    matching_tasks = [
+        task for task in tasks
+        if task["title"].casefold() == normalized_title
+    ]
+
+    if not matching_tasks:
+        print("Error: No task found with that title.")
+        return False
+
+    target = next(
+        (task for task in matching_tasks if not task["completed"]),
+        matching_tasks[0],
+    )
+
+    target["priority"] = normalized_priority
+    print(
+        f"Priority updated: {target['title']} "
+        f"({normalized_priority})"
+    )
+    return True
+
+
+def get_tasks_by_priority(priority):
+    """Return copies of tasks matching the requested priority."""
+
+    if not isinstance(priority, str):
+        print("Error: Priority must be low, medium, or high.")
+        return []
+
+    normalized_priority = priority.strip().lower()
+
+    if normalized_priority not in ("low", "medium", "high"):
+        print("Error: Priority must be low, medium, or high.")
+        return []
+
+    return [
+        task.copy()
+        for task in tasks
+        if task.get("priority", "medium") == normalized_priority
+    ]
+
+
 if __name__ == "__main__":
     add_task("Complete Codzee task")
     add_task("Review pull requests")
     add_task("Complete Codzee task")
 
     complete_task("Complete Codzee task")
+    set_task_priority("Review pull requests", "high")
 
     show_tasks()
     show_task_summary()
