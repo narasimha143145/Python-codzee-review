@@ -4,7 +4,7 @@ import unicodedata
 tasks = []
 
 INVISIBLE_EDGE_CHARS = (
-    "\u200b\u200e\u200f\u200d\u2060\ufeff\u00ad"
+    "\u200b\u200e\u200f\u2060\ufeff\u00ad"
     "\u202a\u202b\u202c\u202d\u202e"
 )
 
@@ -44,14 +44,15 @@ def add_task(task):
         return False
 
     if any(
-        unicodedata.category(char) in ("Cc", "Cf", "Zl", "Zp")
+        unicodedata.category(char) in ("Cc", "Zl", "Zp")
         for char in cleaned_task
     ):
         print("Error: Task cannot contain control characters.")
         return False
 
     visible_chars = [
-        char for char in cleaned_task
+        char
+        for char in cleaned_task
         if char.isprintable()
         and not char.isspace()
         and char not in ("\u3164", "\u2800")
@@ -134,7 +135,7 @@ def show_task_summary():
 
 
 def set_task_priority(task_title, priority):
-    """Set priority on the first pending matching task, or first match."""
+    """Set priority on the first pending match, or first match if all completed."""
 
     if not isinstance(task_title, str):
         print("Error: Task title must be text.")
@@ -211,4 +212,5 @@ if __name__ == "__main__":
 
     show_tasks()
     show_task_summary()
+    
     
