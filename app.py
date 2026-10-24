@@ -4,8 +4,8 @@ import unicodedata
 tasks = []
 
 INVISIBLE_EDGE_CHARS = (
-    "\u200b\u200c\u200d\u2060\ufeff\u00ad"
-    "\u200e\u200f\u202a\u202b\u202c\u202d\u202e"
+    "\u200b\u200e\u200f\u200d\u2060\ufeff\u00ad"
+    "\u202a\u202b\u202c\u202d\u202e"
 )
 
 
@@ -44,7 +44,7 @@ def add_task(task):
         return False
 
     if any(
-        unicodedata.category(char) in ("Cc", "Zl", "Zp")
+        unicodedata.category(char) in ("Cc", "Cf", "Zl", "Zp")
         for char in cleaned_task
     ):
         print("Error: Task cannot contain control characters.")
@@ -64,6 +64,7 @@ def add_task(task):
     tasks.append({
         "title": cleaned_task,
         "completed": False,
+        "priority": "medium",
     })
 
     print(f"Task added: {cleaned_task}")
@@ -75,10 +76,7 @@ def complete_task(task_title):
         print("Error: Task title must be text.")
         return False
 
-    if any(
-        0xD800 <= ord(char) <= 0xDFFF
-        for char in task_title
-    ):
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in task_title):
         print("Error: Task title contains invalid characters.")
         return False
 
@@ -118,9 +116,7 @@ def show_tasks():
 
 def get_task_summary():
     total = len(tasks)
-    completed = sum(
-        1 for task in tasks if task["completed"]
-    )
+    completed = sum(1 for task in tasks if task["completed"])
     pending = total - completed
 
     return {
@@ -138,42 +134,69 @@ def show_task_summary():
 
 
 def set_task_priority(task_title, priority):
-    """Set a task's priority to low, medium, or high."""
+    """Set priority on the first pending matching task, or first match."""
+
     if not isinstance(task_title, str):
-        raise ValueError("Task title must be text.")
+        print("Error: Task title must be text.")
+        return False
+
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in task_title):
+        print("Error: Task title contains invalid characters.")
+        return False
 
     if not isinstance(priority, str):
-        raise ValueError("Priority must be low, medium, or high.")
+        print("Error: Priority must be low, medium, or high.")
+        return False
 
     normalized_title = clean_task_title(task_title).casefold()
     normalized_priority = priority.strip().lower()
 
     if not normalized_title:
-        raise ValueError("Task title cannot be empty.")
+        print("Error: Task title cannot be empty.")
+        return False
 
-    if normalized_priority not in {"low", "medium", "high"}:
-        raise ValueError("Priority must be low, medium, or high.")
+    if normalized_priority not in ("low", "medium", "high"):
+        print("Error: Priority must be low, medium, or high.")
+        return False
 
-    for task in tasks:
-        if task["title"].casefold() == normalized_title:
-            task["priority"] = normalized_priority
-            return True
+    matching_tasks = [
+        task for task in tasks
+        if task["title"].casefold() == normalized_title
+    ]
 
-    return False
+    if not matching_tasks:
+        print("Error: No task found with that title.")
+        return False
+
+    target = next(
+        (task for task in matching_tasks if not task["completed"]),
+        matching_tasks[0],
+    )
+
+    target["priority"] = normalized_priority
+    print(
+        f"Priority updated: {target['title']} "
+        f"({normalized_priority})"
+    )
+    return True
 
 
 def get_tasks_by_priority(priority):
-    """Return tasks matching the requested priority."""
+    """Return copies of tasks matching the requested priority."""
+
     if not isinstance(priority, str):
-        raise ValueError("Priority must be low, medium, or high.")
+        print("Error: Priority must be low, medium, or high.")
+        return []
 
     normalized_priority = priority.strip().lower()
 
-    if normalized_priority not in {"low", "medium", "high"}:
-        raise ValueError("Priority must be low, medium, or high.")
+    if normalized_priority not in ("low", "medium", "high"):
+        print("Error: Priority must be low, medium, or high.")
+        return []
 
     return [
-        task for task in tasks
+        task.copy()
+        for task in tasks
         if task.get("priority", "medium") == normalized_priority
     ]
 
